@@ -3,7 +3,7 @@ from tkinter import ttk
 from components.ticker import CryptoTicker
 from components.order_book import OrderBook
 from components.chart import PriceVolumeChart
-
+from utils import preferences
 
 class TickerApp:
     BG = "#0B0E11"
@@ -38,9 +38,15 @@ class TickerApp:
             state="readonly",
             width=11
         )
-        self.combo.current(0)
         self.combo.pack(side=tk.LEFT, pady=(5, 0))
-        self.combo.bind("<<ComboboxSelected>>", self.show_selected)
+
+        self.is_hidden = preferences.load_preference("is_hidden_info", False)
+        self.show_hide_btn = ttk.Button(
+            self.top_frame,
+            text="Show Info" if self.is_hidden else "Hide Info",
+            command=self.toggle_show_hide
+        )
+        self.show_hide_btn.pack(side=tk.RIGHT)
 
         self.main_frame = ttk.Frame(self.root, style="TFrame")
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
@@ -54,7 +60,7 @@ class TickerApp:
         self.right_frame.pack_propagate(False)
 
         self.chart_frame = ttk.Frame(self.left_frame, style="Card.TFrame")
-        self.chart_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        self.chart_frame.pack(fill=tk.BOTH, expand=True)
 
         self.btc_chart = PriceVolumeChart(self.chart_frame, "btcusdt")
         self.eth_chart = PriceVolumeChart(self.chart_frame, "ethusdt")
@@ -107,6 +113,53 @@ class TickerApp:
         self.btc_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.btc_order_book.start()
 
+        saved_coin = preferences.load_preference("selected_coin", "BTC/USDT")
+        if saved_coin in self.combo["values"]:
+            self.choice.set(saved_coin)
+            self.show_selected()
+
+        self.combo.bind("<<ComboboxSelected>>", self.on_coin_change)
+
+        if self.is_hidden:
+            self.apply_hide_state()
+
+    def toggle_show_hide(self):
+        self.is_hidden = not self.is_hidden
+        preferences.save_preference("is_hidden_info", self.is_hidden)
+        if self.is_hidden:
+            self.apply_hide_state()
+            self.show_hide_btn.config(text="Show Info")
+        else:
+            self.show_info()
+            self.show_hide_btn.config(text="Hide Info")
+
+    def apply_hide_state(self):
+        mapping = {
+            "BTC/USDT": (self.btc_ticker, self.btc_order_book),
+            "ETH/USDT": (self.eth_ticker, self.eth_order_book),
+            "SOL/USDT": (self.sol_ticker, self.sol_order_book),
+            "LINK/USDT": (self.link_ticker, self.link_order_book),
+            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book),
+            "DOGE/USDT": (self.doge_ticker, self.doge_order_book),
+        }
+        selection = self.choice.get()
+        ticker, order_book = mapping[selection]
+        ticker.pack_forget()
+        order_book.pack_forget()
+        self.right_frame.pack_forget()
+
+    def show_info(self):
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=(20, 0))
+        self.right_frame.config(width=200)
+        self.right_frame.pack_propagate(False)
+        self.show_selected()
+
+    def on_coin_change(self, event=None):
+        self.show_selected()
+        preferences.save_preference("selected_coin", self.choice.get())
+        if self.is_hidden:
+            self.apply_hide_state()
+
     def show_selected(self, event=None):
         selection = self.choice.get()
         self.title_label.config(text=f"{selection} DASHBOARD")
@@ -123,10 +176,8 @@ class TickerApp:
         for ticker, order_book, chart in mapping.values():
             ticker.stop()
             ticker.pack_forget()
-
             order_book.stop()
             order_book.pack_forget()
-
             chart.stop()
             chart.pack_forget()
 
@@ -134,12 +185,13 @@ class TickerApp:
 
         chosen_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         chosen_ticker.start()
-
         chosen_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         chosen_order_book.start()
-
         chosen_chart.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         chosen_chart.start()
+
+        if self.is_hidden:
+            self.apply_hide_state()
 
     def on_closing(self):
         mapping = {

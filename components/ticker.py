@@ -19,7 +19,7 @@ class CryptoTicker:
 
         # Price
         self.price_frame = ttk.Frame(self.left_frame, padding=10, style="Card.TFrame")
-        self.price_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 20), pady=(0, 20))
+        self.price_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 20), pady=20)
 
         self.price_title_label = ttk.Label(self.price_frame, text="Price", font=("Bahnschrift", 12, "bold"), anchor=tk.W, style="Card.TLabel").pack(fill=tk.X)
 
@@ -40,7 +40,7 @@ class CryptoTicker:
 
         # Market Trades
         self.market_trades_frame = ttk.Frame(self.right_frame, padding=10, style="Card.TFrame")
-        self.market_trades_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.market_trades_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=(20, 0))
 
         self.market_trades_label = ttk.Label(self.market_trades_frame, text="Market Trades", font=("Bahnschrift", 12, "bold"), anchor=tk.W, style="Card.TLabel").pack(fill=tk.X, pady=(0, 10))
 
