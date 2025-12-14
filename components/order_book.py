@@ -19,8 +19,8 @@ class OrderBook:
         self.ask_list = tk.Listbox(
             self.ask_frame,
             height=12,
-            bg="#282828",
-            fg="red",
+            bg="#1A1D20",
+            fg="#F6465D",
             font=("Consolas", 10),
             activestyle='none',
             highlightthickness=0,
@@ -34,8 +34,8 @@ class OrderBook:
         self.bid_list = tk.Listbox(
             self.bid_frame,
             height=12,
-            bg="#282828",
-            fg="green",
+            bg="#1A1D20",
+            fg="#0ECB81",
             font=("Consolas", 10),
             activestyle='none',
             highlightthickness=0,

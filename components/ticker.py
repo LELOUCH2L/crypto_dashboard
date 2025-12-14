@@ -49,7 +49,7 @@ class CryptoTicker:
         self.trade_list = tk.Listbox(
             self.market_trades_frame,
             height=8,
-            bg="#282828",
+            bg="#1A1D20",
             fg="white",
             font=("Consolas", 10),
             activestyle='none',
@@ -113,7 +113,7 @@ class CryptoTicker:
         if not self.is_active:
             return
 
-        color = "green" if change >= 0 else "red"
+        color = "#0ECB81" if change >= 0 else "#F6465D"
         self.price_label.config(text=f"{price:,.2f}", foreground=color)
 
         sign = "+" if change >= 0 else ""
@@ -138,7 +138,7 @@ class CryptoTicker:
         text = f" {time:<12} {side:<12} {price:<13,.2f} {amount:<14,.4f} {(price * amount):,.2f}"
 
         self.trade_list.insert(0, text)
-        self.trade_list.itemconfig(0, fg="red" if is_sell else "green")
+        self.trade_list.itemconfig(0, fg="#F6465D" if is_sell else "#0ECB81")
 
         if self.trade_list.size() > 8:
             self.trade_list.delete(8)

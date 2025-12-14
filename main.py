@@ -6,27 +6,22 @@ from components.chart import PriceVolumeChart
 
 
 class TickerApp:
-    BG = "#0f0f0f"
-    CARD_BG = "#1a1a1a"
-    CARD_BORDER = "#262626"
-    TEXT_MAIN = "#ffffff"
-    TEXT_SUB = "#c7c7c7"
-    DARK_BOX = "#111418"
-    ORDER_BOX = "#282828"
+    BG = "#0B0E11"
+    CARD_BG = "#1A1D20"
+    TEXT_MAIN = "#EAECEF"
+    ORDER_BOX = "#1A1D20"
 
     def __init__(self, root):
         self.root = root
         self.root.title("Real-Time Binance Dashboard")
-        self.root.geometry("1000x750")
+        self.root.geometry("1000x762")
         root.configure(bg=self.BG)
 
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("TFrame", background=self.BG)
-        style.configure("Card.TFrame", background=self.CARD_BG, bordercolor=self.CARD_BORDER)
+        style.configure("Card.TFrame", background=self.CARD_BG)
         style.configure("TLabel", background=self.BG, foreground=self.TEXT_MAIN)
         style.configure("Card.TLabel", background=self.CARD_BG, foreground=self.TEXT_MAIN)
-        style.configure("Small.TLabel", background=self.CARD_BG, foreground=self.TEXT_SUB)
         style.configure("Order.TFrame", background=self.ORDER_BOX)
 
         self.top_frame = ttk.Frame(self.root, style="TFrame")
@@ -148,23 +143,25 @@ class TickerApp:
 
     def on_closing(self):
         mapping = {
-            "BTC/USDT": (self.btc_ticker, self.btc_order_book),
-            "ETH/USDT": (self.eth_ticker, self.eth_order_book),
-            "SOL/USDT": (self.sol_ticker, self.sol_order_book),
-            "LINK/USDT": (self.link_ticker, self.link_order_book),
-            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book),
-            "DOGE/USDT": (self.doge_ticker, self.doge_order_book)
+            "BTC/USDT": (self.btc_ticker, self.btc_order_book, self.btc_chart),
+            "ETH/USDT": (self.eth_ticker, self.eth_order_book, self.eth_chart),
+            "SOL/USDT": (self.sol_ticker, self.sol_order_book, self.sol_chart),
+            "LINK/USDT": (self.link_ticker, self.link_order_book, self.link_chart),
+            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book, self.xrp_chart),
+            "DOGE/USDT": (self.doge_ticker, self.doge_order_book, self.doge_chart),
         }
 
-        for ticker, order_book in mapping.values():
+        for ticker, order_book, chart in mapping.values():
             ticker.stop()
             order_book.stop()
+            chart.stop()
 
-        self.root.destroy()
+        self.root.after(300, self.root.destroy)
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = TickerApp(root)
+    root.minsize(1000, 762)
     root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()

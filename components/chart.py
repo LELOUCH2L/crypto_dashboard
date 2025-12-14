@@ -17,6 +17,12 @@ class PriceVolumeChart:
         self.is_active = False
         self.ws = None
 
+        self.BG = "#1A1D20"
+        self.GRID = "#2B3139"
+        self.TEXT = "#EAECEF"
+        self.GREEN = "#0ECB81"
+        self.RED = "#F6465D"
+
         self.times = []
         self.opens = []
         self.highs = []
@@ -27,13 +33,17 @@ class PriceVolumeChart:
         self.frame = ttk.Frame(parent, style="Card.TFrame")
 
         self.fig = Figure(figsize=(6, 4), dpi=100)
-        self.ax_price = self.fig.add_subplot(211)
-        self.ax_vol = self.fig.add_subplot(212, sharex=self.ax_price)
+        self.fig.patch.set_facecolor(self.BG)
+
+        gs = self.fig.add_gridspec(2, 1, height_ratios=[3, 1], hspace=0.05)
+        self.ax_price = self.fig.add_subplot(gs[0])
+        self.ax_vol = self.fig.add_subplot(gs[1], sharex=self.ax_price)
+
+        self.ax_price.set_facecolor(self.BG)
+        self.ax_vol.set_facecolor(self.BG)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-        self.fig.tight_layout()
 
     def start(self):
         if self.is_active:
@@ -145,11 +155,19 @@ class PriceVolumeChart:
         self.redraw()
 
     def redraw(self):
+        from matplotlib.ticker import FuncFormatter, ScalarFormatter
+
         self.ax_price.clear()
         self.ax_vol.clear()
 
+        self.ax_price.set_facecolor(self.BG)
+        self.ax_vol.set_facecolor(self.BG)
+
         width = 0.6
         volume_colors = []
+
+        self.ax_price.grid(True, color=self.GRID, linewidth=0.6, zorder=0)
+        self.ax_vol.grid(True, color=self.GRID, linewidth=0.6, zorder=0)
 
         for i in range(len(self.opens)):
             o = self.opens[i]
@@ -157,11 +175,16 @@ class PriceVolumeChart:
             l = self.lows[i]
             c = self.closes[i]
 
-            color = "green" if c >= o else "red"
+            color = self.GREEN if c >= o else self.RED
             volume_colors.append(color)
 
             # Wick
-            self.ax_price.plot([i, i], [l, h], color=color, linewidth=1)
+            self.ax_price.plot(
+                [i, i], [l, h],
+                color=color,
+                linewidth=1,
+                zorder=3
+            )
 
             # Body
             rect = patches.Rectangle(
@@ -169,30 +192,59 @@ class PriceVolumeChart:
                 width,
                 max(abs(c - o), 0.0001),
                 facecolor=color,
-                edgecolor=color
+                edgecolor=color,
+                zorder=4
             )
             self.ax_price.add_patch(rect)
 
-        self.ax_price.axhline(self.closes[-1], linestyle="--", linewidth=1)
-        self.ax_price.set_ylabel("Price")
-        self.ax_price.grid(True)
+        self.ax_price.axhline(
+            self.closes[-1],
+            linestyle="--",
+            linewidth=1,
+            color="#bbbbbb",
+            zorder=2
+        )
 
-        self.ax_price.xaxis.set_visible(False)
+        self.ax_price.set_ylabel("Price", color=self.TEXT)
+        self.ax_price.tick_params(axis="y", colors=self.TEXT)
+        self.ax_price.tick_params(axis="x", bottom=False, labelbottom=False)
+
+        for spine in self.ax_price.spines.values():
+            spine.set_visible(False)
 
         self.ax_vol.bar(
             range(len(self.volumes)),
             self.volumes,
-            color=volume_colors
+            color=volume_colors,
+            width=0.6,
+            zorder=3
         )
 
-        self.ax_vol.set_ylabel("Volume")
-        self.ax_vol.grid(True)
+        def vol_formatter(x, pos):
+            if x >= 1_000_000:
+                return f"{x / 1_000_000:.1f}M"
+            elif x >= 1_000:
+                return f"{x / 1_000:.0f}K"
+            return f"{int(x)}"
+
+        self.ax_vol.yaxis.set_major_formatter(FuncFormatter(vol_formatter))
+
+        sf = ScalarFormatter(useMathText=False)
+        sf.set_scientific(False)
+        sf.set_useOffset(False)
+        self.ax_vol.yaxis.set_major_formatter(FuncFormatter(vol_formatter))
+
+        self.ax_vol.set_ylabel("Volume", color=self.TEXT)
+        self.ax_vol.tick_params(axis="y", colors=self.TEXT)
+        self.ax_vol.tick_params(axis="x", colors=self.TEXT)
 
         step = 10
         self.ax_vol.set_xticks(range(0, len(self.times), step))
-        self.ax_vol.set_xticklabels(self.times[::step], rotation=30)
+        self.ax_vol.set_xticklabels(self.times[::step], rotation=30, ha="right")
 
-        self.fig.tight_layout()
+        for spine in self.ax_vol.spines.values():
+            spine.set_visible(False)
+
         self.canvas.draw()
 
     def pack(self, **kwargs):
