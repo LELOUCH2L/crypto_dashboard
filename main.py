@@ -5,6 +5,7 @@ from components.order_book import OrderBook
 from components.chart import PriceVolumeChart
 from utils import preferences
 
+
 class TickerApp:
     BG = "#0B0E11"
     CARD_BG = "#1A1D20"
