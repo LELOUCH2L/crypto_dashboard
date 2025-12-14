@@ -33,7 +33,7 @@ class CryptoTicker:
         self.volume_frame = ttk.Frame(self.left_frame, padding=10, style="Card.TFrame")
         self.volume_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 20))
 
-        self.volume_title_label = ttk.Label(self.volume_frame, text="Volume", font=("Bahnschrift", 12, "bold"), anchor=tk.W, style="Card.TLabel").pack(fill=tk.X)
+        self.volume_title_label = ttk.Label(self.volume_frame, text="Volume 24H", font=("Bahnschrift", 12, "bold"), anchor=tk.W, style="Card.TLabel").pack(fill=tk.X)
 
         self.volume_label = ttk.Label(self.volume_frame, text="--", font=("Consolas", 12, "bold"), anchor=tk.W, style="Card.TLabel")
         self.volume_label.pack(fill=tk.X, pady=(10, 0))
