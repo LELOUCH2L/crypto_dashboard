@@ -24,6 +24,7 @@ class TickerApp:
         style.configure("Card.TLabel", background=self.CARD_BG, foreground=self.TEXT_MAIN)
         style.configure("Order.TFrame", background=self.ORDER_BOX)
 
+        # Top frame
         self.top_frame = ttk.Frame(self.root, style="TFrame")
         self.top_frame.pack(fill=tk.X, padx=20, pady=(20, 0))
 
@@ -39,6 +40,7 @@ class TickerApp:
             width=11
         )
         self.combo.pack(side=tk.LEFT, pady=(5, 0))
+        self.combo.bind("<<ComboboxSelected>>", self.on_coin_change)
 
         self.is_hidden = preferences.load_preference("is_hidden_info", False)
         self.show_hide_btn = ttk.Button(
@@ -48,6 +50,7 @@ class TickerApp:
         )
         self.show_hide_btn.pack(side=tk.RIGHT)
 
+        # Main frame
         self.main_frame = ttk.Frame(self.root, style="TFrame")
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
@@ -59,29 +62,11 @@ class TickerApp:
         self.right_frame.config(width=200)
         self.right_frame.pack_propagate(False)
 
+        # Chart frame
         self.chart_frame = ttk.Frame(self.left_frame, style="Card.TFrame")
         self.chart_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.btc_chart = PriceVolumeChart(self.chart_frame, "btcusdt")
-        self.eth_chart = PriceVolumeChart(self.chart_frame, "ethusdt")
-        self.sol_chart = PriceVolumeChart(self.chart_frame, "solusdt")
-        self.link_chart = PriceVolumeChart(self.chart_frame, "linkusdt")
-        self.xrp_chart = PriceVolumeChart(self.chart_frame, "xrpusdt")
-        self.doge_chart = PriceVolumeChart(self.chart_frame, "dogeusdt")
-
-        self.btc_chart.pack(fill=tk.BOTH, expand=True)
-        self.btc_chart.start()
-
-        self.btc_ticker = CryptoTicker(self.left_frame, "btcusdt")
-        self.eth_ticker = CryptoTicker(self.left_frame, "ethusdt")
-        self.sol_ticker = CryptoTicker(self.left_frame, "solusdt")
-        self.link_ticker = CryptoTicker(self.left_frame, "linkusdt")
-        self.xrp_ticker = CryptoTicker(self.left_frame, "xrpusdt")
-        self.doge_ticker = CryptoTicker(self.left_frame, "dogeusdt")
-        
-        self.btc_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.btc_ticker.start()
-
+        # Order book frame
         self.order_title = ttk.Label(
             self.right_frame,
             text="Order Book",
@@ -94,8 +79,13 @@ class TickerApp:
 
         self.header_frame = ttk.Frame(self.right_frame, style="Card.TFrame")
         self.header_frame.pack(fill=tk.X, padx=10)
-
-        ttk.Label(self.header_frame, text=f" {"Price":<11} {"Amount"}",font=("Consolas", 10, "bold"), style="Card.TLabel", anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(
+            self.header_frame,
+            text=f" {'Price':<11} {'Amount'}",
+            font=("Consolas", 10, "bold"),
+            style="Card.TLabel",
+            anchor=tk.W
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self.ask_frame = ttk.Frame(self.right_frame, style="Order.TFrame")
         self.ask_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -103,22 +93,25 @@ class TickerApp:
         self.bid_frame = ttk.Frame(self.right_frame, style="Order.TFrame")
         self.bid_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
 
-        self.btc_order_book = OrderBook(self.ask_frame, self.bid_frame,"btcusdt")
-        self.eth_order_book = OrderBook(self.ask_frame, self.bid_frame,"ethusdt")
-        self.sol_order_book = OrderBook(self.ask_frame, self.bid_frame,"solusdt")
-        self.link_order_book = OrderBook(self.ask_frame, self.bid_frame,"linkusdt")
-        self.xrp_order_book = OrderBook(self.ask_frame, self.bid_frame,"xrpusdt")
-        self.doge_order_book = OrderBook(self.ask_frame, self.bid_frame,"dogeusdt")
-
-        self.btc_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.btc_order_book.start()
+        self.mapping = {
+            "BTC/USDT": "btcusdt",
+            "ETH/USDT": "ethusdt",
+            "SOL/USDT": "solusdt",
+            "LINK/USDT": "linkusdt",
+            "XRP/USDT": "xrpusdt",
+            "DOGE/USDT": "dogeusdt",
+        }
 
         saved_coin = preferences.load_preference("selected_coin", "BTC/USDT")
-        if saved_coin in self.combo["values"]:
-            self.choice.set(saved_coin)
-            self.show_selected()
+        if saved_coin not in self.mapping:
+            saved_coin = "BTC/USDT"
+        self.choice.set(saved_coin)
 
-        self.combo.bind("<<ComboboxSelected>>", self.on_coin_change)
+        self.active_ticker = None
+        self.active_order_book = None
+        self.active_chart = None
+
+        self.show_selected()
 
         if self.is_hidden:
             self.apply_hide_state()
@@ -134,25 +127,20 @@ class TickerApp:
             self.show_hide_btn.config(text="Hide Info")
 
     def apply_hide_state(self):
-        mapping = {
-            "BTC/USDT": (self.btc_ticker, self.btc_order_book),
-            "ETH/USDT": (self.eth_ticker, self.eth_order_book),
-            "SOL/USDT": (self.sol_ticker, self.sol_order_book),
-            "LINK/USDT": (self.link_ticker, self.link_order_book),
-            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book),
-            "DOGE/USDT": (self.doge_ticker, self.doge_order_book),
-        }
-        selection = self.choice.get()
-        ticker, order_book = mapping[selection]
-        ticker.pack_forget()
-        order_book.pack_forget()
         self.right_frame.pack_forget()
+        if self.active_ticker:
+            self.active_ticker.pack_forget()
+        if self.active_order_book:
+            self.active_order_book.pack_forget()
 
     def show_info(self):
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=(20, 0))
         self.right_frame.config(width=200)
         self.right_frame.pack_propagate(False)
-        self.show_selected()
+        if self.active_ticker:
+            self.active_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        if self.active_order_book:
+            self.active_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     def on_coin_change(self, event=None):
         self.show_selected()
@@ -162,52 +150,33 @@ class TickerApp:
 
     def show_selected(self, event=None):
         selection = self.choice.get()
+        symbol = self.mapping[selection]
         self.title_label.config(text=f"{selection} DASHBOARD")
 
-        mapping = {
-            "BTC/USDT": (self.btc_ticker, self.btc_order_book, self.btc_chart),
-            "ETH/USDT": (self.eth_ticker, self.eth_order_book, self.eth_chart),
-            "SOL/USDT": (self.sol_ticker, self.sol_order_book, self.sol_chart),
-            "LINK/USDT": (self.link_ticker, self.link_order_book, self.link_chart),
-            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book, self.xrp_chart),
-            "DOGE/USDT": (self.doge_ticker, self.doge_order_book, self.doge_chart),
-        }
+        for obj in [self.active_ticker, self.active_order_book, self.active_chart]:
+            if obj:
+                obj.stop()
+                obj.pack_forget()
 
-        for ticker, order_book, chart in mapping.values():
-            ticker.stop()
-            ticker.pack_forget()
-            order_book.stop()
-            order_book.pack_forget()
-            chart.stop()
-            chart.pack_forget()
+        self.active_ticker = CryptoTicker(self.left_frame, symbol)
+        self.active_order_book = OrderBook(self.ask_frame, self.bid_frame, symbol)
+        self.active_chart = PriceVolumeChart(self.chart_frame, symbol)
 
-        chosen_ticker, chosen_order_book, chosen_chart = mapping[selection]
+        self.active_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.active_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.active_chart.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        chosen_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        chosen_ticker.start()
-        chosen_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        chosen_order_book.start()
-        chosen_chart.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        chosen_chart.start()
+        self.active_ticker.start()
+        self.active_order_book.start()
+        self.active_chart.start()
 
         if self.is_hidden:
             self.apply_hide_state()
 
     def on_closing(self):
-        mapping = {
-            "BTC/USDT": (self.btc_ticker, self.btc_order_book, self.btc_chart),
-            "ETH/USDT": (self.eth_ticker, self.eth_order_book, self.eth_chart),
-            "SOL/USDT": (self.sol_ticker, self.sol_order_book, self.sol_chart),
-            "LINK/USDT": (self.link_ticker, self.link_order_book, self.link_chart),
-            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book, self.xrp_chart),
-            "DOGE/USDT": (self.doge_ticker, self.doge_order_book, self.doge_chart),
-        }
-
-        for ticker, order_book, chart in mapping.values():
-            ticker.stop()
-            order_book.stop()
-            chart.stop()
-
+        for obj in [self.active_ticker, self.active_order_book, self.active_chart]:
+            if obj:
+                obj.stop()
         self.root.after(300, self.root.destroy)
 
 
