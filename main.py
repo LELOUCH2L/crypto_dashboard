@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from components.ticker import CryptoTicker
 from components.order_book import OrderBook
+from components.chart import PriceVolumeChart
 
 
 class TickerApp:
@@ -16,7 +17,7 @@ class TickerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Real-Time Binance Dashboard")
-        self.root.geometry("1000x600")
+        self.root.geometry("1000x750")
         root.configure(bg=self.BG)
 
         style = ttk.Style()
@@ -59,6 +60,16 @@ class TickerApp:
 
         self.chart_frame = ttk.Frame(self.left_frame, style="Card.TFrame")
         self.chart_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        self.btc_chart = PriceVolumeChart(self.chart_frame, "btcusdt")
+        self.eth_chart = PriceVolumeChart(self.chart_frame, "ethusdt")
+        self.sol_chart = PriceVolumeChart(self.chart_frame, "solusdt")
+        self.link_chart = PriceVolumeChart(self.chart_frame, "linkusdt")
+        self.xrp_chart = PriceVolumeChart(self.chart_frame, "xrpusdt")
+        self.doge_chart = PriceVolumeChart(self.chart_frame, "dogeusdt")
+
+        self.btc_chart.pack(fill=tk.BOTH, expand=True)
+        self.btc_chart.start()
 
         self.btc_ticker = CryptoTicker(self.left_frame, "btcusdt")
         self.eth_ticker = CryptoTicker(self.left_frame, "ethusdt")
@@ -106,29 +117,34 @@ class TickerApp:
         self.title_label.config(text=f"{selection} DASHBOARD")
 
         mapping = {
-            "BTC/USDT": (self.btc_ticker, self.btc_order_book),
-            "ETH/USDT": (self.eth_ticker, self.eth_order_book),
-            "SOL/USDT": (self.sol_ticker, self.sol_order_book),
-            "LINK/USDT": (self.link_ticker, self.link_order_book),
-            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book),
-            "DOGE/USDT": (self.doge_ticker, self.doge_order_book)
+            "BTC/USDT": (self.btc_ticker, self.btc_order_book, self.btc_chart),
+            "ETH/USDT": (self.eth_ticker, self.eth_order_book, self.eth_chart),
+            "SOL/USDT": (self.sol_ticker, self.sol_order_book, self.sol_chart),
+            "LINK/USDT": (self.link_ticker, self.link_order_book, self.link_chart),
+            "XRP/USDT": (self.xrp_ticker, self.xrp_order_book, self.xrp_chart),
+            "DOGE/USDT": (self.doge_ticker, self.doge_order_book, self.doge_chart),
         }
 
-        for ticker, order_book in mapping.values():
+        for ticker, order_book, chart in mapping.values():
             ticker.stop()
             ticker.pack_forget()
 
             order_book.stop()
             order_book.pack_forget()
 
-        chosen_ticker = mapping[selection][0]
-        chosen_order_book = mapping[selection][1]
+            chart.stop()
+            chart.pack_forget()
+
+        chosen_ticker, chosen_order_book, chosen_chart = mapping[selection]
 
         chosen_ticker.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         chosen_ticker.start()
 
         chosen_order_book.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         chosen_order_book.start()
+
+        chosen_chart.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        chosen_chart.start()
 
     def on_closing(self):
         mapping = {
